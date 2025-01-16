@@ -1,25 +1,40 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './components/SupabaseClient';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Auth from './components/Auth';
+import FormGenerator from './components/FormGenerator';
+import SharedForm from './components/SharedForm';
+import './styles.css'
 
-function App() {
+const App = () => {
+  const [loggedInUser, setLoggedInUser] = useState(null);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setLoggedInUser(session?.user || null);
+    };
+    getSession();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setLoggedInUser(null);
+  };
+
+  if (!loggedInUser) {
+    return <Auth setLoggedInUser={setLoggedInUser} />;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <button onClick={handleLogout}>Logout</button>
+      <Routes>
+        <Route path="/" element={<FormGenerator loggedInUser={loggedInUser} />} />
+        <Route path="/shared-form/:id" element={<SharedForm />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
